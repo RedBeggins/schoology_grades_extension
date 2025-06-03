@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Schoology Grades</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f7f6;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .controls {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        select {
+            padding: 8px 12px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+        table {
+            width: 100%;
+            border-collapse: separate; /* Use separate for rounded corners on cells */
+            border-spacing: 0;
+            margin-top: 20px;
+            background-color: #ffffff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden; /* Ensures rounded corners apply to content */
+        }
+        th, td {
+            border: 1px solid #e0e0e0;
+            padding: 12px;
+            text-align: center;
+            vertical-align: top;
+        }
+        th {
+            background-color: #34495e;
+            color: white;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 14px;
+        }
+        td {
+            background-color: #fdfdfd;
+        }
+        .course-name-cell {
+            text-align: left;
+            font-weight: bold;
+            color: #34495e;
+            font-size: 16px; /* Increased font size for course names */
+        }
+        .grade-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 30px; /* Ensure cells have some height even if empty */
+        }
+        .grade-rectangle {
+            background-color: #ecf0f1;
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+            padding: 5px 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            color: #2c3e50;
+            transition: background-color 0.2s ease;
+            min-width: 40px; /* Minimum width for grades */
+            text-align: center;
+        }
+        .grade-rectangle:hover {
+            background-color: #dce1e3;
+        }
+        .grade-rectangle.empty {
+            background-color: #f8f8f8;
+            color: #95a5a6;
+            cursor: default;
+        }
+        .grade-rectangle.empty:hover {
+            background-color: #f8f8f8;
+        }
+
+        /* Category specific colors (soft colors) */
+        .category-daily-grades .grade-rectangle { background-color: #e8f5e9; border-color: #a5d6a7; } /* Light Green */
+        .category-appreciation .grade-rectangle { background-color: #e3f2fd; border-color: #90caf9; } /* Light Blue */
+        .category-exams-projects .grade-rectangle { background-color: #fff3e0; border-color: #ffcc80; } /* Light Orange */
+        .category-uncategorized .grade-rectangle { background-color: #f3e5f5; border-color: #ce93d8; } /* Light Purple */
+        .category-other .grade-rectangle { background-color: #fbe9e7; border-color: #ffab91; } /* Light Red/Coral */
+        .category-average .grade-rectangle { background-color: #ffe0b2; border-color: #ffb74d; } /* Light Orange for Average */
+
+        /* Grade-based colors */
+        .grade-rectangle.grade-red {
+            background-color: #ffcdd2 !important; /* Light Red */
+            border-color: #ef9a9a !important;
+            color: #c62828 !important; /* Darker red text */
+        }
+        .grade-rectangle.grade-orange {
+            background-color: #ffe0b2 !important; /* Light Orange */
+            border-color: #ffcc80 !important;
+            color: #ef6c00 !important; /* Darker orange text */
+        }
+        .grade-rectangle.grade-light-green {
+            background-color: #c8e6c9 !important; /* Light Green */
+            border-color: #a5d6a7 !important;
+            color: #2e7d32 !important; /* Darker green text */
+        }
+        .grade-rectangle.grade-dark-green {
+            background-color: #a5d6a7 !important; /* Darker Green */
+            border-color: #66bb6a !important;
+            color: #1b5e20 !important; /* Even darker green text */
+        }
+
+        /* Modal/Tooltip styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 400px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            position: relative;
+        }
+        .close-button {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            cursor: pointer;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .modal-content p {
+            margin: 8px 0;
+            font-size: 16px;
+        }
+        .modal-content strong {
+            color: #34495e;
+        }
+        .modal-average-details {
+            margin-top: 15px;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+        }
+        .modal-average-details p {
+            font-size: 14px;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Your Schoology Grades</h1>
+
+    <div class="controls">
+        <label for="bimester-select">Select Bimester:</label>
+        <select id="bimester-select"></select>
+    </div>
+
+    <div id="gradesContainer">
+        <p>Loading grades...</p>
+    </div>
+
+    <!-- Grade Detail Modal -->
+    <div id="gradeDetailModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2 id="modalTitle">Activity Details</h2>
+            <p><strong>Activity Name:</strong> <span id="modalActivityName"></span><span id="modalActivityLink"></span></p>
+            <p><strong>Category:</strong> <span id="modalCategory"></span></p>
+            <p><strong>Grade:</strong> <span id="modalGradeValue"></span></p>
+            <p><strong>Subject:</strong> <span id="modalSubject"></span></p>
+            <p><strong>Due Date:</strong> <span id="modalDueDate"></span></p> <!-- Added Due Date -->
+            <div id="modalAverageDetails" class="modal-average-details" style="display:none;">
+                <h3>Average Calculation:</h3>
+                <div id="averageCalculationSteps"></div>
+                <p><strong>Final Average:</strong> <span id="modalFinalAverage"></span></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="grades_display.js"></script>
+</body>
+</html>

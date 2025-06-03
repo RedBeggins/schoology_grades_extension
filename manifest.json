@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Schoology Grades Scraper",
+  "version": "1.0",
+  "description": "Scrapes grades from Schoology, categorizes them, and displays them in a table.",
+  "permissions": [
+    "scripting",
+    "storage",
+    "webNavigation"
+  ],
+  "host_permissions": [
+    "https://ecp.schoology.com/grades/grades*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+}
