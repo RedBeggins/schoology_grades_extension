@@ -260,6 +260,60 @@ document.addEventListener('DOMContentLoaded', () => {
                 tbody.appendChild(row);
             });
 
+            // Calculate and display overall bimester averages and grand total average
+            const overallBimesterAveragesDiv = document.createElement('div');
+            overallBimesterAveragesDiv.style.marginTop = '20px';
+            overallBimesterAveragesDiv.style.padding = '15px';
+            overallBimesterAveragesDiv.style.backgroundColor = '#e0f2f7'; /* Light blue background */
+            overallBimesterAveragesDiv.style.border = '1px solid #81d4fa'; /* Blue border */
+            overallBimesterAveragesDiv.style.borderRadius = '8px';
+            overallBimesterAveragesDiv.style.textAlign = 'center';
+            overallBimesterAveragesDiv.style.fontWeight = 'bold';
+            overallBimesterAveragesDiv.style.fontSize = '18px';
+            overallBimesterAveragesDiv.style.color = '#01579b'; /* Darker blue text */
+            overallBimesterAveragesDiv.innerHTML = '<h3>Overall Bimester Averages:</h3>';
+
+            let grandTotalWeightedScore = 0;
+            let grandTotalValidBimesterAveragesCount = 0;
+            const grandTotalCalculationSteps = [];
+
+            uniquePeriods.forEach(periodName => {
+                const gradesInPeriod = allGrades.filter(grade => grade.period === periodName);
+                const bimesterAverageResult = calculateWeightedAverage(gradesInPeriod);
+
+                if (bimesterAverageResult.average !== 'N/A') {
+                    const p = document.createElement('p');
+                    p.textContent = `${periodName}: ${bimesterAverageResult.average}`;
+                    p.style.cursor = 'pointer';
+                    p.dataset.isAverage = 'true';
+                    p.dataset.subject = `Overall ${periodName}`;
+                    p.dataset.finalAverage = bimesterAverageResult.average;
+                    p.dataset.calculationSteps = JSON.stringify(bimesterAverageResult.steps);
+                    p.addEventListener('click', showAverageDetails);
+                    overallBimesterAveragesDiv.appendChild(p);
+
+                    grandTotalWeightedScore += parseFloat(bimesterAverageResult.average);
+                    grandTotalValidBimesterAveragesCount++;
+                    grandTotalCalculationSteps.push(`${periodName}: ${bimesterAverageResult.average}`);
+                }
+            });
+
+            const grandAverage = grandTotalValidBimesterAveragesCount > 0 ? (grandTotalWeightedScore / grandTotalValidBimesterAveragesCount).toFixed(2) : 'N/A';
+            const grandAverageP = document.createElement('p');
+            grandAverageP.style.marginTop = '10px';
+            grandAverageP.style.borderTop = '1px solid #81d4fa';
+            grandAverageP.style.paddingTop = '10px';
+            grandAverageP.textContent = `Grand Overall Average: ${grandAverage}`;
+            grandAverageP.style.cursor = 'pointer';
+            grandAverageP.dataset.isAverage = 'true';
+            grandAverageP.dataset.subject = 'Grand Overall Average';
+            grandAverageP.dataset.finalAverage = grandAverage;
+            grandAverageP.dataset.calculationSteps = JSON.stringify(grandTotalCalculationSteps);
+            grandAverageP.addEventListener('click', showAverageDetails);
+            overallBimesterAveragesDiv.appendChild(grandAverageP);
+
+            gradesContainer.appendChild(overallBimesterAveragesDiv);
+
         } else {
             // Mode: Individual Bimester (columns are Categories)
             const filteredGrades = allGrades.filter(grade => grade.period === selectedBimester);
@@ -381,6 +435,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 tbody.appendChild(row);
             });
+
+            // Calculate and display total bimester average
+            const bimesterOverallAverageResult = calculateWeightedAverage(filteredGrades);
+            if (bimesterOverallAverageResult.average !== 'N/A') {
+                const totalAverageDiv = document.createElement('div');
+                totalAverageDiv.style.marginTop = '20px';
+                totalAverageDiv.style.padding = '15px';
+                totalAverageDiv.style.backgroundColor = '#e8f5e9'; /* Light green background */
+                totalAverageDiv.style.border = '1px solid #a5d6a7'; /* Green border */
+                totalAverageDiv.style.borderRadius = '8px';
+                totalAverageDiv.style.textAlign = 'center';
+                totalAverageDiv.style.fontWeight = 'bold';
+                totalAverageDiv.style.fontSize = '18px';
+                totalAverageDiv.style.color = '#2e7d32'; /* Darker green text */
+                totalAverageDiv.textContent = `Total Bimester Average: ${bimesterOverallAverageResult.average}`;
+                
+                // Add click listener to show calculation steps for the total bimester average
+                totalAverageDiv.dataset.isAverage = 'true';
+                totalAverageDiv.dataset.subject = `Overall Bimester ${selectedBimester}`;
+                totalAverageDiv.dataset.finalAverage = bimesterOverallAverageResult.average;
+                totalAverageDiv.dataset.calculationSteps = JSON.stringify(bimesterOverallAverageResult.steps);
+                totalAverageDiv.addEventListener('click', showAverageDetails);
+
+                gradesContainer.appendChild(totalAverageDiv);
+            }
         }
         table.appendChild(tbody);
         gradesContainer.appendChild(table);
