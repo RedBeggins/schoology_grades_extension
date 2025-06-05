@@ -14,8 +14,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const averageCalculationSteps = document.getElementById('averageCalculationSteps');
     const modalFinalAverage = document.getElementById('modalFinalAverage');
 
+    // New tool elements
+    const neededGradeCourseSelect = document.getElementById('neededGradeCourseSelect');
+    const neededGradeBimesterSelect = document.getElementById('neededGradeBimesterSelect');
+    const targetAverageInput = document.getElementById('targetAverageInput');
+    const neededGradeCategorySelect = document.getElementById('neededGradeCategorySelect');
+    const calculateNeededGradeBtn = document.getElementById('calculateNeededGradeBtn');
+    const neededGradeResultDiv = document.getElementById('neededGradeResult');
+    const neededGradeOutput = document.getElementById('neededGradeOutput');
+
+    const affectAverageCourseSelect = document.getElementById('affectAverageCourseSelect');
+    const affectAverageBimesterSelect = document.getElementById('affectAverageBimesterSelect');
+    const newGradeInput = document.getElementById('newGradeInput');
+    const newGradeCategorySelect = document.getElementById('newGradeCategorySelect');
+    const calculateAffectAverageBtn = document.getElementById('calculateAffectAverageBtn');
+    const affectAverageResultDiv = document.getElementById('affectAverageResult');
+    const affectAverageOutput = document.getElementById('affectAverageOutput');
+
     let allGrades = [];
     let uniqueBimesters = [];
+    let uniqueCourses = [];
+    let uniqueCategories = [];
+
+    // Hardcoded category weights as per user feedback
+    const categoryWeightsMap = {
+        'Appreciation': 0.10, // 10%
+        'Daily Grades': 0.60, // 60%
+        'Exams and Projects': 0.30 // 30%
+    };
 
     // Helper function to apply color based on grade value
     function applyGradeColor(gradeValue, element) {
@@ -77,14 +103,18 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        populateBimesterDropdown();
+        uniqueBimesters = [...new Set(allGrades.map(grade => grade.period))].sort();
+        uniqueCourses = [...new Set(allGrades.map(grade => grade.course))].sort();
+        uniqueCategories = [...new Set(allGrades.map(grade => grade.category))].sort();
+
+        populateBimesterDropdown(); // For main display
+        populateToolDropdowns(); // For new tools
+        populateCategoryDropdowns(); // For new tools
         renderGradesTable(bimesterSelect.value);
     });
 
-    // Populate bimester dropdown
+    // Populate bimester dropdown for main display
     function populateBimesterDropdown() {
-        uniqueBimesters = [...new Set(allGrades.map(grade => grade.period))].sort();
-        
         // Add "All Bimesters" option
         const allOption = document.createElement('option');
         allOption.value = 'all';
@@ -100,6 +130,55 @@ document.addEventListener('DOMContentLoaded', () => {
 
         bimesterSelect.addEventListener('change', (event) => {
             renderGradesTable(event.target.value);
+        });
+    }
+
+    // Populate dropdowns for the new tools
+    function populateToolDropdowns() {
+        // Populate Course dropdowns
+        [neededGradeCourseSelect, affectAverageCourseSelect].forEach(selectElement => {
+            selectElement.innerHTML = '<option value="">Select Course</option>'; // Default option
+            uniqueCourses.forEach(course => {
+                const option = document.createElement('option');
+                option.value = course;
+                option.textContent = course;
+                selectElement.appendChild(option);
+            });
+        });
+
+        // Populate Bimester dropdowns
+        [neededGradeBimesterSelect, affectAverageBimesterSelect].forEach(selectElement => {
+            selectElement.innerHTML = '<option value="">Select Bimester</option>'; // Default option
+            uniqueBimesters.forEach(bimester => {
+                const option = document.createElement('option');
+                option.value = bimester;
+                option.textContent = bimester;
+                selectElement.appendChild(option);
+            });
+        });
+    }
+
+    // Populate category dropdowns for the new tools
+    function populateCategoryDropdowns() {
+        const categoryDropdowns = [neededGradeCategorySelect, newGradeCategorySelect];
+        categoryDropdowns.forEach(selectElement => {
+            selectElement.innerHTML = '<option value="">Select Category (Optional)</option>'; // Default option
+            // Add hardcoded categories first
+            for (const categoryName in categoryWeightsMap) {
+                const option = document.createElement('option');
+                option.value = categoryName;
+                option.textContent = categoryName;
+                selectElement.appendChild(option);
+            }
+            // Add any other unique categories from grades data that are not hardcoded
+            uniqueCategories.forEach(category => {
+                if (!categoryWeightsMap.hasOwnProperty(category)) {
+                    const option = document.createElement('option');
+                    option.value = category;
+                    option.textContent = category;
+                    selectElement.appendChild(option);
+                }
+            });
         });
     }
 
@@ -128,16 +207,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 categoryAverage = sumGrades / validGradesInThisCategory.length;
             }
 
-            // Find a grade item for this category to get its weight (assuming weight is consistent per category)
-            const gradeWithWeight = gradesInThisCategory.find(g => g.categoryWeight);
+            // Determine category weight
             let categoryWeightValue = 0;
             let categoryWeightDisplay = '';
 
-            if (gradeWithWeight && gradeWithWeight.categoryWeight) {
-                const weightMatch = gradeWithWeight.categoryWeight.match(/\((\d+)%\)/);
-                if (weightMatch && weightMatch[1]) {
-                    categoryWeightValue = parseFloat(weightMatch[1]) / 100;
-                    categoryWeightDisplay = weightMatch[0];
+            if (categoryWeightsMap.hasOwnProperty(category)) {
+                categoryWeightValue = categoryWeightsMap[category];
+                categoryWeightDisplay = `(${categoryWeightValue * 100}%)`;
+            } else {
+                // Fallback to existing grade's categoryWeight if available and not in hardcoded map
+                const gradeWithWeight = gradesInThisCategory.find(g => g.categoryWeight);
+                if (gradeWithWeight && gradeWithWeight.categoryWeight) {
+                    const weightMatch = gradeWithWeight.categoryWeight.match(/\((\d+)%\)/);
+                    if (weightMatch && weightMatch[1]) {
+                        categoryWeightValue = parseFloat(weightMatch[1]) / 100;
+                        categoryWeightDisplay = weightMatch[0];
+                    }
                 }
             }
 
@@ -158,6 +243,123 @@ document.addEventListener('DOMContentLoaded', () => {
         return { average: finalAverage, steps: calculationSteps, totalWeight: totalWeight };
     }
 
+    // Function to calculate needed grade
+    function calculateNeededGrade() {
+        const course = neededGradeCourseSelect.value;
+        const bimester = neededGradeBimesterSelect.value;
+        const targetAverage = parseFloat(targetAverageInput.value);
+        let category = neededGradeCategorySelect.value;
+        // Removed weight input
+
+        neededGradeResultDiv.style.display = 'none';
+        neededGradeOutput.innerHTML = '';
+
+        if (!course || !bimester || isNaN(targetAverage)) {
+            neededGradeOutput.innerHTML = '<span style="color: red;">Please select a course, bimester, and enter a valid target average.</span>';
+            neededGradeResultDiv.style.display = 'block';
+            return;
+        }
+
+        const gradesForContext = allGrades.filter(g => g.course === course && g.period === bimester);
+        if (gradesForContext.length === 0) {
+            neededGradeOutput.innerHTML = `<span style="color: red;">No grades found for ${course} in ${bimester}.</span>`;
+            neededGradeResultDiv.style.display = 'block';
+            return;
+        }
+
+        const currentAverageResult = calculateWeightedAverage(gradesForContext);
+        const currentWeightedScore = parseFloat(currentAverageResult.average) * currentAverageResult.totalWeight;
+        const currentTotalWeight = currentAverageResult.totalWeight;
+
+        // Determine weight based on selected category
+        let finalWeight = 0;
+
+        if (category && categoryWeightsMap.hasOwnProperty(category)) {
+            finalWeight = categoryWeightsMap[category];
+        } else {
+            // Fallback if no category selected or not in hardcoded map
+            finalWeight = 0.10; // Default to 10%
+        }
+
+        if (finalWeight === 0) {
+            neededGradeOutput.innerHTML = `<span style="color: red;">Cannot calculate needed grade with a 0% weight. Please select a category with a defined weight.</span>`;
+            neededGradeResultDiv.style.display = 'block';
+            return;
+        }
+
+        // Equation: (current_weighted_score + (needed_grade * finalWeight)) / (current_total_weight + finalWeight) = target_average
+        const neededGrade = (targetAverage * (currentTotalWeight + finalWeight) - currentWeightedScore) / finalWeight;
+
+        let resultText = `To achieve an average of ${targetAverage.toFixed(2)} in ${course} for ${bimester}, you need a grade of <span style="font-weight: bold; color: #007bff;">${neededGrade.toFixed(2)}</span> in a ${category || 'new'} activity worth ${finalWeight * 100}%.`;
+
+        if (neededGrade > 5) {
+            resultText += `<br><span style="color: red;">This grade (${neededGrade.toFixed(2)}) is higher than the maximum possible (5.0). It might be difficult or impossible to reach your target average.</span>`;
+        } else if (neededGrade < 0) {
+            resultText += `<br><span style="color: green;">You've already surpassed your target average! Your current average is ${currentAverageResult.average}.</span>`;
+        }
+        
+        neededGradeOutput.innerHTML = resultText;
+        neededGradeResultDiv.style.display = 'block';
+    }
+
+    // Function to calculate how a new grade affects average
+    function calculateAffectAverage() {
+        const course = affectAverageCourseSelect.value;
+        const bimester = affectAverageBimesterSelect.value;
+        const newGradeValue = parseFloat(newGradeInput.value);
+        let category = newGradeCategorySelect.value;
+        // Removed weight input
+
+        affectAverageResultDiv.style.display = 'none';
+        affectAverageOutput.innerHTML = '';
+
+        if (!course || !bimester || isNaN(newGradeValue)) {
+            affectAverageOutput.innerHTML = '<span style="color: red;">Please select a course, bimester, and enter a valid new grade.</span>';
+            affectAverageResultDiv.style.display = 'block';
+            return;
+        }
+
+        const gradesForContext = allGrades.filter(g => g.course === course && g.period === bimester);
+        
+        // Determine weight based on selected category
+        let finalWeight = 0;
+
+        if (category && categoryWeightsMap.hasOwnProperty(category)) {
+            finalWeight = categoryWeightsMap[category];
+        } else {
+            // Fallback if no category selected or not in hardcoded map
+            finalWeight = 0.10; // Default to 10%
+        }
+
+        if (finalWeight === 0) {
+            affectAverageOutput.innerHTML = `<span style="color: red;">Cannot calculate with a 0% weight. Please select a category with a defined weight.</span>`;
+            affectAverageResultDiv.style.display = 'block';
+            return;
+        }
+
+        // Create a temporary grade object for the new grade
+        const newGradeObject = {
+            course: course,
+            period: bimester,
+            category: category || 'Hypothetical', // Use selected category or 'Hypothetical'
+            categoryWeight: `(${finalWeight * 100}%)`, // Format as expected by calculateWeightedAverage
+            value: newGradeValue.toString(),
+            item: 'Hypothetical Grade'
+        };
+
+        const gradesWithNew = [...gradesForContext, newGradeObject];
+        const newAverageResult = calculateWeightedAverage(gradesWithNew);
+
+        let resultText = `If you get a ${newGradeValue.toFixed(2)} in a ${category || 'new'} activity worth ${finalWeight * 100}% in ${course} for ${bimester}, your new average would be <span style="font-weight: bold; color: #007bff;">${newAverageResult.average}</span>.`;
+        
+        resultText += `<h3>Calculation Steps:</h3>`;
+        newAverageResult.steps.forEach(step => {
+            resultText += `<p>${step}</p>`;
+        });
+
+        affectAverageOutput.innerHTML = resultText;
+        affectAverageResultDiv.style.display = 'block';
+    }
 
     // Render grades table
     function renderGradesTable(selectedBimester) {
@@ -534,4 +736,8 @@ document.addEventListener('DOMContentLoaded', () => {
             modal.style.display = 'none';
         }
     });
+
+    // Add event listeners for new tool buttons
+    calculateNeededGradeBtn.addEventListener('click', calculateNeededGrade);
+    calculateAffectAverageBtn.addEventListener('click', calculateAffectAverage);
 });

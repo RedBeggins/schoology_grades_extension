@@ -183,6 +183,140 @@
             font-size: 14px;
             margin: 5px 0;
         }
+
+        /* New styles for Grade Calculation Tools */
+        .tools-container {
+            margin-top: 40px;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .tools-container h2 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 25px;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .tool-section {
+            margin-bottom: 30px;
+            padding: 25px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #fdfdfd;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+        .tool-section:last-child {
+            margin-bottom: 0;
+        }
+        .tool-title {
+            color: #34495e;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 20px;
+            font-weight: 600;
+        }
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            align-items: end;
+            margin-bottom: 15px;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .input-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+            font-size: 14px;
+        }
+        .input-field {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #dcdcdc;
+            font-size: 15px;
+            box-sizing: border-box; /* Include padding in width */
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .input-field:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+            outline: none;
+        }
+        .calculate-button {
+            padding: 12px 25px;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            align-self: flex-end; /* Align button to the bottom of its grid cell */
+        }
+        .calculate-button:hover {
+            transform: translateY(-1px);
+        }
+        .calculate-button:active {
+            transform: translateY(0);
+        }
+        .calculate-button-green {
+            background-color: #28a745;
+        }
+        .calculate-button-green:hover {
+            background-color: #218838;
+        }
+        .calculate-button-blue {
+            background-color: #007bff;
+        }
+        .calculate-button-blue:hover {
+            background-color: #0069d9;
+        }
+        .result-container {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 5px;
+            display: none; /* Hidden by default, shown by JS */
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .result-container p {
+            margin: 5px 0;
+            line-height: 1.5;
+        }
+        .result-container h3 {
+            margin-top: 15px;
+            margin-bottom: 10px;
+            font-size: 18px;
+            color: #34495e;
+        }
+        #neededGradeResult {
+            background-color: #e6ffe6;
+            border: 1px solid #a3e6a3;
+        }
+        #affectAverageResult {
+            background-color: #e6f2ff;
+            border: 1px solid #a3ccff;
+        }
+        .result-highlight {
+            font-weight: bold;
+            color: #007bff;
+        }
+        .result-message-red {
+            color: red;
+        }
+        .result-message-green {
+            color: green;
+        }
+        .result-message-gray {
+            color: gray;
+            font-size: 0.9em;
+        }
     </style>
 </head>
 <body>
@@ -195,6 +329,70 @@
 
     <div id="gradesContainer">
         <p>Loading grades...</p>
+    </div>
+
+    <div id="toolsContainer" class="tools-container">
+        <h2>Grade Calculation Tools</h2>
+
+        <!-- Tool 1: What grade do I need? -->
+        <div class="tool-section">
+            <h3 class="tool-title">What Grade Do I Need?</h3>
+            <div class="input-grid">
+                <div class="input-group">
+                    <label for="neededGradeCourseSelect" class="input-label">Select Course:</label>
+                    <select id="neededGradeCourseSelect" class="input-field"></select>
+                </div>
+                <div class="input-group">
+                    <label for="neededGradeBimesterSelect" class="input-label">Select Bimester:</label>
+                    <select id="neededGradeBimesterSelect" class="input-field"></select>
+                </div>
+                <div class="input-group">
+                    <label for="targetAverageInput" class="input-label">Target Average:</label>
+                    <input type="number" id="targetAverageInput" placeholder="e.g., 4.5" min="0" max="5" step="0.1" class="input-field">
+                </div>
+                <div class="input-group">
+                    <label for="neededGradeCategorySelect" class="input-label">Category (Optional):</label>
+                    <select id="neededGradeCategorySelect" class="input-field">
+                        <option value="">Select Category</option>
+                        <!-- Categories will be populated by JS -->
+                    </select>
+                </div>
+                <button id="calculateNeededGradeBtn" class="calculate-button calculate-button-green">Calculate</button>
+            </div>
+            <div id="neededGradeResult" class="result-container">
+                <p class="result-text" id="neededGradeOutput"></p>
+            </div>
+        </div>
+
+        <!-- Tool 2: How would X grade affect my average? -->
+        <div class="tool-section">
+            <h3 class="tool-title">How Would a New Grade Affect My Average?</h3>
+            <div class="input-grid">
+                <div class="input-group">
+                    <label for="affectAverageCourseSelect" class="input-label">Select Course:</label>
+                    <select id="affectAverageCourseSelect" class="input-field"></select>
+                </div>
+                <div class="input-group">
+                    <label for="affectAverageBimesterSelect" class="input-label">Select Bimester:</label>
+                    <select id="affectAverageBimesterSelect" class="input-field"></select>
+                </div>
+                <div class="input-group">
+                    <label for="newGradeInput" class="input-label">New Grade:</label>
+                    <input type="number" id="newGradeInput" placeholder="e.g., 4.0" min="0" max="5" step="0.1" class="input-field">
+                </div>
+                <div class="input-group">
+                    <label for="newGradeCategorySelect" class="input-label">Category (Optional):</label>
+                    <select id="newGradeCategorySelect" class="input-field">
+                        <option value="">Select Category</option>
+                        <!-- Categories will be populated by JS -->
+                    </select>
+                </div>
+                <button id="calculateAffectAverageBtn" class="calculate-button calculate-button-blue">Calculate</button>
+            </div>
+            <div id="affectAverageResult" class="result-container">
+                <p class="result-text" id="affectAverageOutput"></p>
+            </div>
+        </div>
     </div>
 
     <!-- Grade Detail Modal -->
