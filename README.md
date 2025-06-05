@@ -1,4 +1,5 @@
 # Schoology Grades Extension
+![image](https://github.com/user-attachments/assets/178b879f-fece-4e62-a637-46ae8030bc91)
 
 This repository contains a Chrome extension designed to enhance the display of grades on Schoology. It aims to provide a more user-friendly and informative overview of your academic performance.
 
